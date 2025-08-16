@@ -142,7 +142,7 @@ Definitions.secondaryTrackerAttributes = {
 	["Armed ships"] = true
 }
 
-Definitions.groundStartRadius = 30000       -- radius around an airfield where if a player is present, a flight will ground instead of air start
+Definitions.groundStartRadius = 15000       -- radius around an airfield where if a player is present, a flight will ground instead of air start
 Definitions.skipResetTime = 60              -- seconds between a failed launch until airfield will be used again
 Definitions.takeoffCleanupTime = 1800       -- seconds after a flight is spawned when it will be cleaned up if not in the air
 Definitions.landingCleanupTime = 1200       -- seconds after a flight has landed when it will be cleaned up
