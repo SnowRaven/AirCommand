@@ -15,7 +15,8 @@ local Mission = require("Missions.Mission")
 local AEW = class(Mission)
 
 AEW.flightOptions = {
-    [AI.Option.Air.id.REACTION_ON_THREAT] = AI.Option.Air.val.REACTION_ON_THREAT.ALLOW_ABORT_MISSION,
+    [AI.Option.Air.id.RADAR_USING] = AI.Option.Air.val.RADAR_USING.FOR_CONTINUOUS_SEARCH,
+    [AI.Option.Air.id.REACTION_ON_THREAT] = AI.Option.Air.val.REACTION_ON_THREAT.NO_REACTION,
     [AI.Option.Air.id.RTB_ON_BINGO] = false
 }
 

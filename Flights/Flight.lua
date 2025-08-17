@@ -529,7 +529,7 @@ function Flight:init(group, mission, home, squadron)
 	self.cleanupTime = timer.getTime() + defs.takeoffCleanupTime
 	 -- wonky if we don't delay it by a bit
 	timer.scheduleFunction(self.assignMission, self, timer.getTime() + 1)
-	-- set airfield readiness time for next intercept
+	-- schedule an intercept if we have a target track
 	if mission.targetTrack ~= nil then
 		timer.scheduleFunction(self.intercept, self, timer.getTime() + 5)
 	end
@@ -617,7 +617,7 @@ function Flight:launch(airbase, squadron, mission, flightSize, groundStart)
 			["alt"] = (airbaseLocation.alt + 100),
 			["heading"] = airbase.takeoffHeading,
 			["alt_type"] = "BARO",
-			["speed"] = 100,
+			["speed"] = 120,
 			["skill"] = utils.getSkill(squadron.skill),
 			["livery_id"] = squadron.livery,
 			["payload"] = loadout,
@@ -627,18 +627,22 @@ function Flight:launch(airbase, squadron, mission, flightSize, groundStart)
 				[3] = i,
 				["name"] = name
 			},
+			["AddPropAircraft"] = {
+				["VoiceCallsignLabel"] = string.sub(flightName, 1) .. string.sub(flightName, -1),
+				["VoiceCallsignNumber"] = string.sub(tostring(flightNumber), -1) .. string.sub(tostring(i), -1), -- use substring for the edge case of the flight number being two digit
+				["STN_L16"] = "90" .. string.sub(tostring(flightNumber), -1) .. "0" .. string.sub(tostring(i), -1),
+			},
 		}
 		units[i].onboard_num = tostring(units[i].callsign[1]) .. tostring(units[i].callsign[2]) .. tostring(units[i].callsign[3])
 	end
 	flightData["units"] = units
-	-- force ground start if players are close enough to see
 	local airbaseID = airbase.object:getID()
 	local airbaseCategory = airbase.object:getDesc().category
 	-- add route waypoint for airfield launch
 	route = {
 		["points"] = {
 			[1] = {
-				["speed"] = 100,
+				["speed"] = 120,
 				["x"] = airbaseLocation.x,
 				["y"] = airbaseLocation.y,
 				["alt"] = (airbaseLocation.alt + 100),
@@ -651,6 +655,7 @@ function Flight:launch(airbase, squadron, mission, flightSize, groundStart)
 	else
 		route.points[1].airdromeId = airbaseID
 	end
+	-- check if a ground or air start is needed, force ground start if players are close enough to the airbase
 	if groundStart or utils.playerInRange(defs.groundStartRadius, airbaseLocation.x, airbaseLocation.y) then
 		if airbaseCategory == Airbase.Category.HELIPAD then
 			route.points[1].type = "TakeOffGroundHot"
