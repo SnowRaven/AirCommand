@@ -580,7 +580,9 @@ function Flight:launch(airbase, squadron, mission, flightSize, groundStart)
 		flightName = callsignName .. " " .. tostring(flightNumber)
 	end
 	flightData = {
-		["name"] = flightName
+		["name"] = flightName,
+		["uncontrollable"] = true,
+		["communication"] = true
 	}
 	-- see if mission specific loadout option exists and, if so, select it
 	-- if not, check if one does for a similar mission profile or use general mission class loadout
@@ -630,7 +632,7 @@ function Flight:launch(airbase, squadron, mission, flightSize, groundStart)
 			["AddPropAircraft"] = {
 				["VoiceCallsignLabel"] = string.sub(flightName, 1) .. string.sub(flightName, -1),
 				["VoiceCallsignNumber"] = string.sub(tostring(flightNumber), -1) .. string.sub(tostring(i), -1), -- use substring for the edge case of the flight number being two digit
-				["STN_L16"] = "90" .. string.sub(tostring(flightNumber), -1) .. "0" .. string.sub(tostring(i), -1),
+				["STN_L16"] = utils.randomSTN(),
 			},
 		}
 		units[i].onboard_num = tostring(units[i].callsign[1]) .. tostring(units[i].callsign[2]) .. tostring(units[i].callsign[3])
@@ -646,6 +648,27 @@ function Flight:launch(airbase, squadron, mission, flightSize, groundStart)
 				["x"] = airbaseLocation.x,
 				["y"] = airbaseLocation.y,
 				["alt"] = (airbaseLocation.alt + 100),
+				["task"] = {
+					["id"] = "ComboTask",
+					["params"] = {
+						["tasks"] = {
+							[1] = {
+								["id"] = "WrappedAction",
+								["params"] =
+								{
+									["action"] =
+									{
+										["id"] = "EPLRS",
+										["params"] =
+										{
+											["value"] = true,
+										},
+									},
+								},
+							},
+						}
+					}
+				}
 			}
 		}
 	}

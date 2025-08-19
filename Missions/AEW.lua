@@ -65,8 +65,23 @@ function AEW:assignTask(flight)
 										["id"] = "AWACS",
 										["params"] = {
 										}
-									},
-									[2] = {
+									}
+								}
+							}
+						}
+					},
+					[2] = {
+						["type"] = "Turning Point",
+						["action"] = "Turning Point",
+						["x"] = self.orbit.p1.x,
+						["y"] = self.orbit.p1.y,
+						["alt"] = altitude,
+						["speed"] = speed,
+						["task"] = {
+							["id"] = "ComboTask",
+							["params"] = {
+								["tasks"] = {
+									[1] = {
 										["id"] = "Orbit",
 										["params"] = {
 											["pattern"] = "Race-Track",
@@ -86,7 +101,7 @@ function AEW:assignTask(flight)
 							}
 						}
 					},
-					[2] = {
+					[3] = {
 						["type"] = "Land",
 						["action"] = "Turning Point",
 						["airdromeId"] = flight.home.object:getID(),

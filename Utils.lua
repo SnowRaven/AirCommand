@@ -156,4 +156,13 @@ function Utils.sortByDistance(first, second)
 	end
 end
 
+function Utils.randomSTN()
+	local stn = ""
+	for i = 1, 5 do
+		local number = math.random(0, 7)
+		stn = stn .. tostring(number)
+	end
+	return stn
+end
+
 return Utils
