@@ -22,7 +22,7 @@ AEW.flightOptions = {
 
 function AEW:getAltitude(flight)
 	local altitude = flight.parameters.standardAltitude
-    if self.orbit.altitude ~= nil then
+    if self.orbit.alt ~= nil then
         altitude = self.orbit.alt
     end
 	return altitude
