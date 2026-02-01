@@ -173,10 +173,10 @@ function Utils.getAGL(object)
 end
 
 -- get number of  players on mission or coalition
-function Utils.getPlayerNumber(coalition)
+function Utils.getPlayerNumber(side)
 	local players = 0
-	if coalition ~= nil then
-		for key, unit in pairs(coalition.getPlayers(coalition)) do
+	if side ~= nil then
+		for key, unit in pairs(coalition.getPlayers(side)) do
 			players = players + 1
 		end
 	else

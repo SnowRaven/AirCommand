@@ -14,6 +14,8 @@ local Zone = require ("Positions.Zone")
 	radius - zone radius around its center
 	reference - point towards which patrols will be oriented
 	airframes - table of allowed airframes (if nil all are allowed)
+	minPlayers - minimum amount of players for this zone to be active
+	maxPlayers - maximum amount of players for this zone to be active
 ]]--
 local PatrolZone = class(Zone)
 
@@ -51,6 +53,12 @@ function PatrolZone:init(zoneData)
             self.airframes[airframeID] = value
         end
     end
+	if zoneData.minPlayers ~= nil then
+		self.minPlayers = zoneData.minPlayers
+	end
+	if zoneData.maxPlayers ~= nil then
+		self.maxPlayers = zoneData.maxPlayers
+	end
 end
 
 return PatrolZone

@@ -124,6 +124,9 @@ function AirCommand:init(side, name)
 		["QRARadius"] = 60000,        -- radius in meters for QRA scramble
 		["minScrambleRange"] = 30000, -- minimum range for an intercept against lowest quality tracks
 		["CAPTrackLength"] = 30000,   -- length of CAP racetracks in meters
+		["maxPlayerModifier"] = 1,    -- multiplier for combat package chance at low player count
+		["modifierPlayerFloor"] = 0,  -- maximum number of players for maximum modifier to be in effect
+		["modifierPlayerCeiling"] = 0 -- minimum number of players for no
 	}
 	self.aircraftParameters = {
 		[Unit.Category.AIRPLANE] = {

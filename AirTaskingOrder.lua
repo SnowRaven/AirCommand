@@ -57,6 +57,28 @@ function AirTaskingOrder:addOrbit(orbitData)
 	table.insert(self.orbits, orbit)
 end
 
+-- modify a combat mission's chance to activate by player count
+function AirTaskingOrder:playerModifier(chance)
+	local playerCount = utils.getPlayerNumber(self.side)
+	if playerCount > self.parameters.modifierPlayerCeiling then
+		return chance
+	end
+	if playerCount <= self.parameters.modifierPlayerFloor then
+		return (chance * self.parameters.maxPlayerModifier)
+	end
+	-- I dunno
+	local modifier =
+	((playerCount - self.parameters.modifierPlayerFloor) *
+	((1 - self.parameters.maxPlayerModifier) / (self.parameters.modifierPlayerCeiling - self.parameters.modifierPlayerFloor))) +
+	self.parameters.maxPlayerModifier
+	-- return modified chance
+	local finalChance = chance * modifier
+	if finalChance > 100 then
+		return 100
+	end
+	return finalChance
+end
+
 -- get modified intercept range between a minimum and maximum based on track quality between 0 and 1
 function AirTaskingOrder:getInterceptRange(minRange, maxRange, trackQuality)
 	-- if maximum range is lower than minimum for some reason, return it unmodified
@@ -251,32 +273,42 @@ end
 
 function AirTaskingOrder:patrolMission(missionType)
 	local orbit
-	-- select CAP type and zone
-	local zone = self.patrolZones[math.random(utils.getTableSize(self.patrolZones))]
-	-- build patrol track points
-	-- regular CAP faces the reference point, AMBUSHCAP runs perpendicular
-	if missionType ~= defs.missionType.AMBUSHCAP then
-		orbit = zone:getOrbit(self.parameters.CAPTrackLength)
-	else
-		orbit = zone:getPerpendicularOrbit(self.parameters.CAPTrackLength)
-	end
-	-- pick random squadron to dispatch
-	local squadronData = self:selectSquadron(missionType, zone.airframes)
-	if squadronData ~= nil then
-		-- create mission
-		local mission
-		if missionType == defs.missionType.CAP then
-			mission = CAP:new(orbit)
-		elseif missionType == defs.missionType.AMBUSHCAP then
-			mission = AMBUSHCAP:new(orbit)
+	-- select CAP zone
+	local activeZones = {}
+	local zoneCount = 0
+	for key, zone in pairs(self.patrolZones) do
+		if zone:isActive(self.side) then
+			table.insert(activeZones, zone)
+			zoneCount = zoneCount + 1
 		end
-		-- launch flight
-		local flight = self:launchSortie(squadronData.airbase, squadronData.squadron, mission)
-		-- create package
-		if flight ~= nil then
-			local package = Package:new(mission)
-			package:addFlight(flight)
-			table.insert(self.packages, package)
+	end
+	if zoneCount > 0 then
+		local zone = activeZones[math.random(zoneCount)]
+		-- build patrol track points
+		-- regular CAP faces the reference point, AMBUSHCAP runs perpendicular
+		if missionType ~= defs.missionType.AMBUSHCAP then
+			orbit = zone:getOrbit(self.parameters.CAPTrackLength)
+		else
+			orbit = zone:getPerpendicularOrbit(self.parameters.CAPTrackLength)
+		end
+		-- pick random squadron to dispatch
+		local squadronData = self:selectSquadron(missionType, zone.airframes)
+		if squadronData ~= nil then
+			-- create mission
+			local mission
+			if missionType == defs.missionType.CAP then
+				mission = CAP:new(orbit)
+			elseif missionType == defs.missionType.AMBUSHCAP then
+				mission = AMBUSHCAP:new(orbit)
+			end
+			-- launch flight
+			local flight = self:launchSortie(squadronData.airbase, squadronData.squadron, mission)
+			-- create package
+			if flight ~= nil then
+				local package = Package:new(mission)
+				package:addFlight(flight)
+				table.insert(self.packages, package)
+			end
 		end
 	end
 end
@@ -350,7 +382,7 @@ end
 -- loop for assigning air patrol packages
 function AirTaskingOrder:patrolATO()
 	-- dispatch CAP missions
-	if math.random(100) < self.parameters.CAPChance then
+	if math.random(100) < self:playerModifier(self.parameters.CAPChance) then
 		if math.random(100) < self.parameters.AMBUSHChance then
 			self:patrolMission(defs.missionType.AMBUSHCAP)
 		else
@@ -434,9 +466,15 @@ end
 
 -- retasks interceptors to a CAP near their location
 function AirTaskingOrder:retaskInterceptors(flight)
+	local activeZones = {}
+	for key, zone in pairs(self.patrolZones) do
+		if zone:isActive(self.side) then
+			table.insert(activeZones, zone)
+		end
+	end
 	local lowestDistance
 	local patrolZone
-	for key, zone in pairs(self.patrolZones) do
+	for key, zone in pairs(activeZones) do
 		local distance = flight:getDistance(zone.x, zone.y)
 		if lowestDistance == nil or distance < lowestDistance then
 			lowestDistance = distance
