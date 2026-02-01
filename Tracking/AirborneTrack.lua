@@ -17,6 +17,7 @@ local class = require("Class")
 	alt - altitude
 	heading - heading in radians
 	velocity - velocity in m/s
+	observations - amount of times the track has been detected, for track quality determination
 	lastUpdate - time at which the track was last updated with target information
 ]]--
 local AirborneTrack = class()
@@ -83,6 +84,8 @@ function AirborneTrack:correlate(target)
 end
 
 function AirborneTrack:update(targets)
+	-- find the maximum weight of any target in the list to later add to the observation counter
+	local observationWeight = 0
     -- get average position of all correlated targets
     local newPosition = {
         x = 0,
@@ -90,11 +93,16 @@ function AirborneTrack:update(targets)
         alt = 0
     }
     local targetNumber = 0
-    for key, target in pairs(targets) do
+    for target, weight in pairs(targets) do
+		-- calculate average position of targets
         newPosition.x = newPosition.x + target:getPoint().x
         newPosition.y = newPosition.y + target:getPoint().z
         newPosition.alt = newPosition.alt + target:getPoint().y
         targetNumber = targetNumber + 1
+		-- find the maximum observation weight
+		if weight > observationWeight then
+			observationWeight = weight
+		end
     end
     newPosition.x = newPosition.x / targetNumber
     newPosition.y = newPosition.y / targetNumber
@@ -114,6 +122,16 @@ function AirborneTrack:update(targets)
 	self.x = newPosition.x
 	self.y = newPosition.y
 	self.alt = newPosition.alt
+	-- add the observation value listed or the maximum allowed if it exceeds it
+	if observationWeight < defs.maxObservationWeight then
+		self.observations = self.observations + observationWeight
+	else
+		self.observations = self.observations + defs.maxObservationWeight
+	end
+	-- check if our observation count is above the maximum and cap it if it is 
+	if self.observations > defs.maxObservations then
+		self.observations = defs.maxObservations
+	end
 	self.lastUpdate = timer.getTime()
 end
 
@@ -130,6 +148,17 @@ function AirborneTrack:merge(track)
 	self.merged = track
 end
 
+-- reduce number of observations if one is missed
+function AirborneTrack:missedObservation()
+	self.observations = self.observations / defs.observationMissFactor
+end
+
+-- return track quality value between 0 and 1
+function AirborneTrack:getQuality()
+	local quality = (self.observations^2) / (self.observations^2 + (self.observations * 6) + 24)
+	return quality
+end
+
 function AirborneTrack:timeout()
 	self.active = false
 end
@@ -138,12 +167,13 @@ function AirborneTrack:isActive()
 	return self.active
 end
 
-function AirborneTrack:init(target)
+function AirborneTrack:init(target, weight)
 	self.active = true
 	self.merged = nil
     self.category = target:getDesc().category
 	self.threatTypes = {}
-    self:update({target})
+	self.observations = 0
+    self:update({[target] = weight})
 end
 
 return AirborneTrack

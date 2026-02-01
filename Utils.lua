@@ -156,6 +156,40 @@ function Utils.sortByDistance(first, second)
 	end
 end
 
+-- get altitude above ground of an object
+function Utils.getAGL(object)
+	local objectPosition = object:getPoint()
+	local position = {
+		x = objectPosition.x,
+		y = objectPosition.z
+	}
+	local height = objectPosition.y - land.getHeight(position)
+	-- I don't know if it's possible but just in case
+	if height < 0 then
+		return 0
+	else
+		return height
+	end
+end
+
+-- get number of  players on mission or coalition
+function Utils.getPlayerNumber(coalition)
+	local players = 0
+	if coalition ~= nil then
+		for key, unit in pairs(coalition.getPlayers(coalition)) do
+			players = players + 1
+		end
+	else
+		for coalition, coalitionID in pairs(coalition.side) do
+			for key, unit in pairs(coalition.getPlayers(coalitionID)) do
+				players = players + 1
+			end
+		end
+	end
+	return players
+end
+
+-- generate random STN
 function Utils.randomSTN()
 	local stn = ""
 	for i = 1, 5 do

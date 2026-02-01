@@ -142,10 +142,16 @@ Definitions.secondaryTrackerAttributes = {
 	["Armed ships"] = true
 }
 
-Definitions.groundStartRadius = 15000       -- radius around an airfield where if a player is present, a flight will ground instead of air start
+Definitions.groundStartRadius = 25000       -- radius around an airfield where if a player is present, a flight will ground instead of air start
 Definitions.skipResetTime = 60              -- seconds between a failed launch until airfield will be used again
 Definitions.takeoffCleanupTime = 1800       -- seconds after a flight is spawned when it will be cleaned up if not in the air
 Definitions.landingCleanupTime = 1200       -- seconds after a flight has landed when it will be cleaned up
+Definitions.primaryTrackerWeight = 1        -- observation weight by primary tracking system
+Definitions.secondaryTrackerWeight = 0.5    -- observation weight by secondary tracking system
+Definitions.fighterObservationWeight = 3    -- observation weight by interceptor
+Definitions.maxObservationWeight = 3        -- maximum amount by which the observation counter can be incremented at once
+Definitions.maxObservations = 1024          -- maximum amount of observations on a track before the value is capped
+Definitions.observationMissFactor = 2     -- value to divide a track's observation counter by if it is not detected
 Definitions.trackTimeout = 60               -- amount of time before tracks are timed out
 Definitions.trackCorrelationDistance = 8000 -- maximum distance in meters between which a target will correlate with a track
 Definitions.trackCorrelationAltitude = 5000 -- maximum altitude difference in meters between which a target will correlate with a track

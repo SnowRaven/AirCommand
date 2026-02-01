@@ -57,6 +57,16 @@ function AirTaskingOrder:addOrbit(orbitData)
 	table.insert(self.orbits, orbit)
 end
 
+-- get modified intercept range between a minimum and maximum based on track quality between 0 and 1
+function AirTaskingOrder:getInterceptRange(minRange, maxRange, trackQuality)
+	-- if maximum range is lower than minimum for some reason, return it unmodified
+	if maxRange < minRange then
+		return maxRange
+	end
+	local range = minRange + ((maxRange - minRange) * trackQuality)
+	return range
+end
+
 function AirTaskingOrder:launchSortie(airbase, squadron, mission)
 	local flightSize = squadron.baseFlightSize -- how many airframes we want to launch
 	-- random chance for more aircraft
@@ -116,7 +126,7 @@ function AirTaskingOrder:selectInterceptorSquadron(track)
 				missionCapable = true
 			end
 			if missionCapable and squadron.targetCategories[track.category] then
-				if utils.getDistance(trackPosition.x, trackPosition.y, airbaseLocation.x, airbaseLocation.y) < squadron.interceptRadius then
+				if utils.getDistance(trackPosition.x, trackPosition.y, airbaseLocation.x, airbaseLocation.y) < self:getInterceptRange(self.parameters.minScrambleRange, squadron.interceptRadius, track:getQuality()) then
 					-- select squadron if appropriate for track threat type
 					local threatAllowed
 					for threatType, value in pairs(track.threatTypes) do
@@ -384,17 +394,17 @@ function AirTaskingOrder:interceptATO()
 							local targetInRange = false
 							if flight.mission.type == defs.missionType.Escort or flight.mission.type == defs.missionType.HAVCAP then
 								targetRange = package:getDistance(track.x, track.y)
-								if targetRange < flight.parameters.escortCommitRange then
+								if targetRange < self:getInterceptRange(flight.parameters.emergencyCommitRange, flight.parameters.escortCommitRange, track:getQuality()) then
 									targetInRange = true
 								end
 							elseif flight.mission.type == defs.missionType.CAP then
 								targetRange = flight:getClosestDistance(track.x, track.y)
-								if targetRange < flight.parameters.commitRange then
+								if targetRange < self:getInterceptRange(flight.parameters.emergencyCommitRange, flight.parameters.commitRange, track:getQuality()) then
 									targetInRange = true
 								end
 							elseif flight.mission.type == defs.missionType.AMBUSHCAP then
 								targetRange = flight:getClosestDistance(track.x, track.y)
-								if targetRange < flight.parameters.ambushCommitRange then
+								if targetRange < self:getInterceptRange(flight.parameters.emergencyCommitRange, flight.parameters.ambushCommitRange, track:getQuality()) then
 									targetInRange = true
 								end
 							end

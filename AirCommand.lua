@@ -43,6 +43,22 @@ function AirCommand:setAircraftParameters(aircraftParameters)
 	end
 end
 
+function AirCommand:setTrackerParameters(trackerarameters)
+	for category, categoryParameters in pairs(trackerarameters) do
+		for key, value in pairs(categoryParameters) do
+			if type(value) ~= "table" then
+				self.trackerarameters[category][key] = value
+			else
+				local trackerType = key
+				self.trackerarameters[category][trackerType] = {}
+				for parameter, value in pairs(value) do
+					self.aircraftParameters[category][trackerType][parameter] = value
+				end
+			end
+		end
+	end
+end
+
 function AirCommand:setThreatTypes(threatTypes)
 	for key, value in pairs(threatTypes) do
 		self.threatTypes[key] = value
@@ -66,6 +82,7 @@ function AirCommand:enableDebug()
 		end
 		env.info(debugName .. " Air Command: Track " .. key .. " position - X: " .. tostring(track.x) .. " - Z: " .. tostring(track.y) .. " - Altitude: " .. tostring(track.alt), 0)
 		env.info(debugName .. " Air Command: Heading: " .. tostring(heading) .. " - Velocity: " .. tostring(track.velocity * 3.6) .. "km/h - Time since update: " .. tostring(timer.getTime() - track.lastUpdate), 0)
+		env.info(debugName .. " Air Command: Observations: " .. tostring(track.observations) .. " - Quality: " .. tostring(track:getQuality()), 0)
 		env.info(debugName .. " Air Command: Category: " .. tostring(track.category), 0)
 		for threatType, value in pairs(track.threatTypes) do
 			env.info(debugName .. " Air Command: Threat Type: " .. tostring(threatType), 0)
@@ -75,7 +92,7 @@ function AirCommand:enableDebug()
 end
 
 function AirCommand:activate(OOB, orbits, patrolZones, ADZExclusion, immediate)
-	self.trackingSystem = TrackingSystem:new(self.side, self.ADZExclusion, self.threatTypes)
+	self.trackingSystem = TrackingSystem:new(self.side, self.ADZExclusion, self.threatTypes, self.trackerParameters)
 	self.ATO = AirTaskingOrder:new(self.side, self.parameters, self.aircraftParameters, self.trackingSystem)
 	for key, airbaseData in pairs(OOB) do
 		self.ATO:addAirbase(airbaseData)
@@ -97,23 +114,24 @@ function AirCommand:init(side, name)
 	self.side = side
 	self.name = name -- specific name for debug purposes, if not defined coalition name will be used
 	self.parameters = {
-		["minPackageTime"] = 3600, -- minimum number of seconds before the package ATO reactivates
-		["maxPackageTime"] = 7200,-- maximum number of seconds before the package ATO reactivates
-		["preparationTime"] = 1800, -- time in seconds it takes to prepare the next interceptors from an airbase
-		["tankerChance"] = 20, -- chance to launch a tanker mission
-		["AEWChance"] = 20, -- chance to launch an AEW mission
-		["CAPChance"] = 80, -- chance to launch a CAP mission
-		["AMBUSHChance"] = 60, -- chance for a CAP tasking to be an AMBUSHCAP
-		["QRARadius"] = 60000, -- radius in meters for emergency scramble
-		["CAPTrackLength"] = 30000, -- length of CAP racetracks in meters
+		["minPackageTime"] = 3600,    -- minimum number of seconds before the package ATO reactivates
+		["maxPackageTime"] = 7200,    -- maximum number of seconds before the package ATO reactivates
+		["preparationTime"] = 1800,   -- time in seconds it takes to prepare the next interceptors from an airbase
+		["tankerChance"] = 20,        -- chance to launch a tanker mission
+		["AEWChance"] = 20,           -- chance to launch an AEW mission
+		["CAPChance"] = 80,           -- chance to launch a CAP mission
+		["AMBUSHChance"] = 60,        -- chance for a CAP tasking to be an AMBUSHCAP
+		["QRARadius"] = 60000,        -- radius in meters for QRA scramble
+		["minScrambleRange"] = 30000, -- minimum range for an intercept against lowest quality tracks
+		["CAPTrackLength"] = 30000,   -- length of CAP racetracks in meters
 	}
 	self.aircraftParameters = {
 		[Unit.Category.AIRPLANE] = {
-			["commitRange"] = 180000, -- radius in meters around which uncommitted fighters will intercept tracks
-			["escortCommitRange"] = 60000, -- radius in meters around uncommitted escort units at which targets will be intercepted
-			["ambushCommitRange"] = 90000, -- radius in meters around uncommitted escort units at which targets will be intercepted
+			["commitRange"] = 180000,         -- radius in meters around which uncommitted fighters will intercept tracks
+			["escortCommitRange"] = 60000,    -- radius in meters around uncommitted escort units at which targets will be intercepted
+			["ambushCommitRange"] = 90000,    -- radius in meters around uncommitted escort units at which targets will be intercepted
 			["emergencyCommitRange"] = 30000, -- radius in meters around a flight to emergency intercept a track regardless of whether it's targeted by others
-			["bingoLevel"] = 0.25, -- fuel level (in fraction from full internal) for a flight to RTB
+			["bingoLevel"] = 0.25,            -- fuel level (in fraction from full internal) for a flight to RTB
 			["maxAltitude"] = 9144,
 			["standardAltitude"] = 7620,
 			["returnAltitude"] = 9144,
@@ -122,11 +140,11 @@ function AirCommand:init(side, name)
 			["ambushSpeed"] = 200
 		},
 		[Unit.Category.HELICOPTER] = {
-			["commitRange"] = 30000, -- radius in meters around which uncommitted fighters will intercept tracks
-			["escortCommitRange"] = 10000, -- radius in meters around uncommitted escort units at which targets will be intercepted
-			["ambushCommitRange"] = 30000, -- radius in meters around uncommitted escort units at which targets will be intercepted
+			["commitRange"] = 30000,         -- radius in meters around which uncommitted fighters will intercept tracks
+			["escortCommitRange"] = 10000,   -- radius in meters around uncommitted escort units at which targets will be intercepted
+			["ambushCommitRange"] = 30000,   -- radius in meters around uncommitted escort units at which targets will be intercepted
 			["emergencyCommitRange"] = 5000, -- radius in meters around a flight to emergency intercept a track regardless of whether it's targeted by others
-			["bingoLevel"] = 0.25, -- fuel level (in fraction from full internal) for a flight to RTB
+			["bingoLevel"] = 0.25,           -- fuel level (in fraction from full internal) for a flight to RTB
 			["maxAltitude"] = 150,
 			["standardAltitude"] = 60,
 			["returnAltitude"] = 60,
@@ -134,6 +152,11 @@ function AirCommand:init(side, name)
 			["standardSpeed"] = 42,
 			["ambushSpeed"] = 28
 		},
+	}
+	self.trackerParameters = {
+		["maxDetectionProbability"] = 95, -- maximum probability of radar detection (out of 100)
+		["minDetectionProbability"] = 20, -- minimum probability of radar detection at zero altitude (out of 100)
+		["altitudeThreshold"] = 300       -- altitude above which targets will be detected at maximum chance
 	}
 	self.threatTypes = {}
 end

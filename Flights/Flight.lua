@@ -265,7 +265,7 @@ function Flight:intercept()
 		if target.object ~= nil and Object.getCategory(target.object) == Object.Category.UNIT and target.object:getCoalition() ~= self.group:getCoalition() then
 			if targetTrack:correlate(target.object) then
 				targetDetected = true
-				table.insert(correlatedTargets, target.object)
+				correlatedTargets[target.object] = defs.fighterObservationWeight
 			end
 		end
 	end
